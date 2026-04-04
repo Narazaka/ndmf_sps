@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - NDMF ParameterProviderに対応
 
 ### Changed
+- PlugのコンポーネントにVRCFuryが存在しない場合エラーとなることを記載
 
 ### Deprecated
 

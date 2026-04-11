@@ -93,6 +93,12 @@ namespace com.meronmks.ndmfsps
         public string Map(string outputName, string inputParam, float inMin, float inMax, float outMin, float outMax)
         {
             EnsureParam(inputParam);
+            if (Math.Abs(inMax - inMin) < 0.00001f)
+            {
+                var output2 = MakeAap(outputName);
+                AddDirect(MakeSetterClip(output2, outMin));
+                return output2;
+            }
             var output = MakeAap(outputName);
 
             var minClip = MakeSetterClip(output, outMin);

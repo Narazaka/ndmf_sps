@@ -294,6 +294,7 @@ namespace com.meronmks.ndmfsps
         internal static void CreateVRCContacts(BuildContext ctx, Transform root, Socket socket)
         {
             var animator = ctx.AvatarRootObject.GetComponent<Animator>();
+            if (socket.depthActions.Count == 0) return;
             var objectName = root.gameObject.name.Replace("/", "_");
             var scale = socket.unitsInMeters ? 1f : root.lossyScale.z;
 
@@ -340,8 +341,8 @@ namespace com.meronmks.ndmfsps
                     innerFrontParam = $"{animParmPrefix}/Inner/Front";
                     Processor.CreateVRCContactReceiver(
                         frontInnerGameObject,
-                        -minDist / scale,
-                        Vector3.forward * (minDist / scale),
+                        -minDist,
+                        Vector3.forward * minDist,
                         new[] { "TPS_Pen_Penetrating" },
                         innerFrontParam,
                         animator,

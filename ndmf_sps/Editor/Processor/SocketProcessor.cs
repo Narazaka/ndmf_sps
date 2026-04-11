@@ -303,7 +303,7 @@ namespace com.meronmks.ndmfsps
             var offset = Math.Max(0, -minDist);
 
             var controller = new AnimatorController();
-            var math = new AapMath(controller);
+            var math = new AapMath(controller, objectName);
 
             // enableSelf ごとに距離計算用のContactとAAPを作成
             var distanceParams = new Dictionary<bool, string>();
@@ -404,25 +404,30 @@ namespace com.meronmks.ndmfsps
                 var mappedParam = $"{objectName}/Anim{i}/Mapped";
                 var distanceParam = distanceParams[depthAction.enableSelf];
 
-                math.Map(
-                    mappedParam,
-                    distanceParam,
-                    offset + depthAction.startDistance * scale,
-                    offset + depthAction.endDistance * scale,
-                    0f, 1f);
+                if (depthAction.smoothingSeconds > 0)
+                {
+                    var rawMappedParam = $"{objectName}/Anim{i}/RawMapped";
+                    math.Map(
+                        rawMappedParam,
+                        distanceParam,
+                        offset + depthAction.startDistance * scale,
+                        offset + depthAction.endDistance * scale,
+                        0f, 1f);
+                    math.Smooth(mappedParam, rawMappedParam, depthAction.smoothingSeconds);
+                }
+                else
+                {
+                    math.Map(
+                        mappedParam,
+                        distanceParam,
+                        offset + depthAction.startDistance * scale,
+                        offset + depthAction.endDistance * scale,
+                        0f, 1f);
+                }
             }
 
-            // AnimatorControllerにDBTレイヤーを設定しMergeAnimatorでアタッチ
-            controller.AddLayer($"SPS Depth Calc for {objectName}");
-            var layer = controller.layers[0];
-            layer.defaultWeight = 1f;
-            var layers = controller.layers;
-            layers[0] = layer;
-            controller.layers = layers;
-
-            var state = layer.stateMachine.AddState("DBT");
-            state.motion = math.DirectTree;
-            state.writeDefaultValues = true;
+            // AnimatorControllerにレイヤーを設定しMergeAnimatorでアタッチ
+            math.FinalizeController($"SPS Depth Calc for {objectName}");
 
             var maMergeAnimator = root.gameObject.AddComponent<ModularAvatarMergeAnimator>();
             maMergeAnimator.animator = controller;

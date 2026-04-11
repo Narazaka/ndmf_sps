@@ -16,14 +16,17 @@ namespace com.meronmks.ndmfsps
         private readonly AnimatorController _controller;
         private readonly BlendTree _directTree;
         private readonly HashSet<string> _registeredParams = new HashSet<string>();
+        private readonly string _paramPrefix;
+        private bool _needsFrameTimeLayer;
 
         private const string AlwaysOneParam = "__ndmfsps_one";
 
         public BlendTree DirectTree => _directTree;
 
-        public AapMath(AnimatorController controller)
+        public AapMath(AnimatorController controller, string paramPrefix = "")
         {
             _controller = controller;
+            _paramPrefix = paramPrefix;
             _directTree = new BlendTree
             {
                 name = "DBT",
@@ -172,6 +175,191 @@ namespace com.meronmks.ndmfsps
         public Motion MakeConstSetter(string toParam, float value)
         {
             return MakeSetterClip(toParam, value);
+        }
+
+        /// <summary>
+        /// パラメータに定数を掛けたAAPを作成。output = param * constant
+        /// </summary>
+        public string Multiply(string name, string param, float constant)
+        {
+            EnsureParam(param);
+            var output = MakeAap(name);
+            AddDirect(param, MakeSetterClip(output, constant));
+            return output;
+        }
+
+        /// <summary>
+        /// パラメータの1フレーム遅延コピーを作成。
+        /// Direct BlendTreeは前フレームのパラメータ値を読むため、
+        /// copierを追加するだけで1フレーム遅延が得られる。
+        /// </summary>
+        public string Buffer(string fromParam, string toName = null)
+        {
+            EnsureParam(fromParam);
+            toName = toName ?? $"{fromParam}_buf";
+            var output = MakeAap(toName);
+            AddDirect(MakeCopier(fromParam, output));
+            return output;
+        }
+
+        /// <summary>
+        /// a - b を計算するAAPを作成
+        /// </summary>
+        public string Subtract(string name, string paramA, string paramB)
+        {
+            EnsureParam(paramA);
+            EnsureParam(paramB);
+            var output = MakeAap(name);
+            AddDirect(paramA, MakeSetterClip(output, 1f));
+            AddDirect(paramB, MakeSetterClip(output, -1f));
+            return output;
+        }
+
+        private string _frameTimeParam;
+
+        /// <summary>
+        /// フレームデルタタイムパラメータを取得（遅延初期化）。
+        /// 初回呼び出し時にフレームタイム計測用レイヤーのセットアップをマークする。
+        /// </summary>
+        private string GetOrCreateFrameTime()
+        {
+            if (_frameTimeParam != null) return _frameTimeParam;
+            _needsFrameTimeLayer = true;
+
+            var prefix = string.IsNullOrEmpty(_paramPrefix) ? "__ndmfsps" : _paramPrefix;
+            var timeSinceLoadParam = $"{prefix}/__time";
+            EnsureParam(timeSinceLoadParam);
+
+            var lastTimeParam = Buffer(timeSinceLoadParam, $"{prefix}/__lastTime");
+            _frameTimeParam = Subtract($"{prefix}/__frameTime", timeSinceLoadParam, lastTimeParam);
+            return _frameTimeParam;
+        }
+
+        /// <summary>
+        /// VRCFuryのGetFramesRequired相当。
+        /// fractionPerFrameの速度で2パススムージングした場合に
+        /// 90%に到達するフレーム数を返す。
+        /// </summary>
+        private static int GetFramesRequired(float fractionPerFrame)
+        {
+            var targetFraction = 0.9f;
+            float target = 0f;
+            float position = 0f;
+            for (var frame = 1; frame < 1000; frame++)
+            {
+                target += (1 - target) * fractionPerFrame;
+                position += (target - position) * fractionPerFrame;
+                if (position >= targetFraction) return frame;
+            }
+            return 1000;
+        }
+
+        /// <summary>
+        /// smoothingSecondsからfractionPerSecondを算出する。
+        /// 二分探索で目標フレーム数に合うfractionPerFrameを見つけ、
+        /// それを60倍してfractionPerSecondにする。
+        /// </summary>
+        private static float CalculateFractionPerSecond(float smoothingSeconds)
+        {
+            var framerateForCalculation = 60;
+            var targetFrames = smoothingSeconds * framerateForCalculation;
+            var currentSpeed = 0.5f;
+            var nextStep = 0.25f;
+            for (var i = 0; i < 20; i++)
+            {
+                var currentFrames = GetFramesRequired(currentSpeed);
+                if (currentFrames > targetFrames)
+                    currentSpeed += nextStep;
+                else
+                    currentSpeed -= nextStep;
+                nextStep *= 0.5f;
+            }
+            return currentSpeed * framerateForCalculation;
+        }
+
+        /// <summary>
+        /// 単一パスのスムージング。
+        /// 1D BlendTreeで[maintain current, use target]を速度パラメータで補間する。
+        /// </summary>
+        private string SmoothSinglePass(string name, string targetParam, string speedParam)
+        {
+            var output = MakeAap(name);
+
+            // maintainTree: 現在値を維持 (output → output)
+            var maintainTree = MakeCopier(output, output);
+
+            // targetTree: 目標値にジャンプ (target → output)
+            var targetTree = MakeCopier(targetParam, output);
+
+            // speedで補間: speed=0→maintain, speed=1→target
+            var smoothTree = Make1D(
+                $"{name} smoothto {targetParam}",
+                speedParam,
+                (0f, maintainTree),
+                (1f, targetTree));
+
+            AddDirect(smoothTree);
+            return output;
+        }
+
+        /// <summary>
+        /// パラメータにスムージングを適用する（2パス、加速度付き）。
+        /// VRCFury v1.1001.0のSmoothingService.Smooth相当。
+        /// </summary>
+        public string Smooth(string name, string targetParam, float smoothingSeconds)
+        {
+            if (smoothingSeconds <= 0) return targetParam;
+            if (smoothingSeconds > 10) smoothingSeconds = 10;
+
+            var frameTime = GetOrCreateFrameTime();
+            var fractionPerSecond = CalculateFractionPerSecond(smoothingSeconds);
+            var speedParam = Multiply($"{name}/Speed", frameTime, fractionPerSecond);
+
+            // 2パス: 加速度付きスムージング
+            var pass1 = SmoothSinglePass($"{name}/Pass1", targetParam, speedParam);
+            var pass2 = SmoothSinglePass($"{name}/Pass2", pass1, speedParam);
+            return pass2;
+        }
+
+        /// <summary>
+        /// AnimatorControllerにすべてのレイヤーを追加する。
+        /// フレームタイムレイヤー（必要時）+ DBTレイヤーを作成。
+        /// </summary>
+        public void FinalizeController(string dbtLayerName)
+        {
+            if (_needsFrameTimeLayer)
+            {
+                var prefix = string.IsNullOrEmpty(_paramPrefix) ? "__ndmfsps" : _paramPrefix;
+                var timeSinceLoadParam = $"{prefix}/__time";
+
+                _controller.AddLayer("FrameTime Counter");
+                var ftIdx = _controller.layers.Length - 1;
+                var ftLayer = _controller.layers[ftIdx];
+                ftLayer.defaultWeight = 1f;
+                var layers = _controller.layers;
+                layers[ftIdx] = ftLayer;
+                _controller.layers = layers;
+
+                var clip = new AnimationClip { name = "FrameTime Counter" };
+                clip.SetCurve("", typeof(Animator), timeSinceLoadParam,
+                    AnimationCurve.Linear(0, 0, 10_000_000, 10_000_000));
+
+                var ftState = ftLayer.stateMachine.AddState("Time");
+                ftState.motion = clip;
+                ftState.writeDefaultValues = true;
+            }
+
+            _controller.AddLayer(dbtLayerName);
+            var dbtIdx = _controller.layers.Length - 1;
+            var dbtLayer = _controller.layers[dbtIdx];
+            dbtLayer.defaultWeight = 1f;
+            var dbtLayers = _controller.layers;
+            dbtLayers[dbtIdx] = dbtLayer;
+            _controller.layers = dbtLayers;
+
+            var dbtState = dbtLayer.stateMachine.AddState("DBT");
+            dbtState.motion = _directTree;
+            dbtState.writeDefaultValues = true;
         }
     }
 }

@@ -480,16 +480,33 @@ namespace com.meronmks.ndmfsps
             offState.motion = emptyClip;
             
             var animClipTuple = Processor.CreateAnimationClip(ctx, socket.gameObject, depthAction.actions, onState);
-            
-            var blendTree = new BlendTree();
-            blendTree.name = $"{objectName}Tree {count}";
-            blendTree.blendType = BlendTreeType.Simple1D;
-            blendTree.blendParameter = parmName;
-            blendTree.useAutomaticThresholds = false;
-            blendTree.AddChild(animClipTuple.Item2, 0f);
-            blendTree.AddChild(animClipTuple.Item1, 1f);
-            
-            onState.motion = blendTree;
+            var onClip = animClipTuple.Item1;
+            var offClip = animClipTuple.Item2;
+
+            if (onClip.length > 0)
+            {
+                // Non-static clip: MotionTimeで駆動（タイムライン上の位置をMappedで制御）
+                var settings = AnimationUtility.GetAnimationClipSettings(onClip);
+                settings.loopTime = false;
+                AnimationUtility.SetAnimationClipSettings(onClip, settings);
+
+                onState.motion = onClip;
+                onState.timeParameterActive = true;
+                onState.timeParameter = parmName;
+            }
+            else
+            {
+                // Static clip: BlendTreeで0→off, 1→onをブレンド
+                var blendTree = new BlendTree();
+                blendTree.name = $"{objectName}Tree {count}";
+                blendTree.blendType = BlendTreeType.Simple1D;
+                blendTree.blendParameter = parmName;
+                blendTree.useAutomaticThresholds = false;
+                blendTree.AddChild(offClip, 0f);
+                blendTree.AddChild(onClip, 1f);
+
+                onState.motion = blendTree;
+            }
 
             var onTransition = offState.AddTransition(onState);
             var offTransition = onState.AddTransition(offState);

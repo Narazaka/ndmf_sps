@@ -16,6 +16,7 @@ namespace com.meronmks.ndmfsps
         private readonly AnimatorController _controller;
         private readonly BlendTree _directTree;
         private readonly HashSet<string> _registeredParams = new HashSet<string>();
+        private readonly Dictionary<string, float> _paramDefaults = new Dictionary<string, float>();
         private readonly string _paramPrefix;
         private bool _needsFrameTimeLayer;
 
@@ -39,12 +40,18 @@ namespace com.meronmks.ndmfsps
         public void EnsureParam(string name, float defaultValue = 0f)
         {
             if (!_registeredParams.Add(name)) return;
+            _paramDefaults[name] = defaultValue;
             _controller.AddParameter(new AnimatorControllerParameter
             {
                 name = name,
                 type = AnimatorControllerParameterType.Float,
                 defaultFloat = defaultValue
             });
+        }
+
+        public float GetDefault(string name)
+        {
+            return _paramDefaults.TryGetValue(name, out var val) ? val : 0f;
         }
 
         public string MakeAap(string name, float defaultValue = 0f)
@@ -96,13 +103,20 @@ namespace com.meronmks.ndmfsps
         public string Map(string outputName, string inputParam, float inMin, float inMax, float outMin, float outMax)
         {
             EnsureParam(inputParam);
+            // 入力パラメータのデフォルト値から出力デフォルトを計算
+            var inputDefault = GetDefault(inputParam);
+            var outputDefault = (inMax - inMin) != 0
+                ? outMin + (outMax - outMin) * (inputDefault - inMin) / (inMax - inMin)
+                : outMin;
+            outputDefault = Math.Min(Math.Max(outputDefault, Math.Min(outMin, outMax)), Math.Max(outMin, outMax));
+
             if (Math.Abs(inMax - inMin) < 0.00001f)
             {
-                var output2 = MakeAap(outputName);
+                var output2 = MakeAap(outputName, outputDefault);
                 AddDirect(MakeSetterClip(output2, outMin));
                 return output2;
             }
-            var output = MakeAap(outputName);
+            var output = MakeAap(outputName, outputDefault);
 
             var minClip = MakeSetterClip(output, outMin);
             var maxClip = MakeSetterClip(output, outMax);
@@ -283,7 +297,7 @@ namespace com.meronmks.ndmfsps
         /// </summary>
         private string SmoothSinglePass(string name, string targetParam, string speedParam)
         {
-            var output = MakeAap(name);
+            var output = MakeAap(name, GetDefault(targetParam));
 
             // maintainTree: 現在値を維持 (output → output)
             var maintainTree = MakeCopier(output, output);

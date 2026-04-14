@@ -483,7 +483,7 @@ namespace com.meronmks.ndmfsps
             var onClip = animClipTuple.Item1;
             var offClip = animClipTuple.Item2;
 
-            if (onClip.length > 0)
+            if (!IsStaticClip(onClip))
             {
                 // Non-static clip: MotionTimeで駆動（タイムライン上の位置をMappedで制御）
                 var settings = AnimationUtility.GetAnimationClipSettings(onClip);
@@ -523,6 +523,32 @@ namespace com.meronmks.ndmfsps
             maMergeAnimator.animator = controller;
             maMergeAnimator.layerType = VRCAvatarDescriptor.AnimLayerType.FX;
             maMergeAnimator.matchAvatarWriteDefaults = true;
+        }
+
+        /// <summary>
+        /// AnimationClipが静的（全カーブの全キーフレームがtime=0かつ同一値）かどうかを判定する。
+        /// VRCFuryのMotionExtensions.IsStatic相当。
+        /// </summary>
+        private static bool IsStaticClip(AnimationClip clip)
+        {
+            foreach (var binding in AnimationUtility.GetCurveBindings(clip))
+            {
+                var curve = AnimationUtility.GetEditorCurve(clip, binding);
+                if (curve == null) continue;
+                var keys = curve.keys;
+                if (keys.Length == 0) continue;
+                if (keys.All(key => key.time != 0)) return false;
+                if (keys.Select(k => k.value).Distinct().Count() > 1) return false;
+            }
+            foreach (var binding in AnimationUtility.GetObjectReferenceCurveBindings(clip))
+            {
+                var keys = AnimationUtility.GetObjectReferenceCurve(clip, binding);
+                if (keys == null) continue;
+                if (keys.Length == 0) continue;
+                if (keys.All(key => key.time != 0)) return false;
+                if (keys.Select(k => k.value).Distinct().Count() > 1) return false;
+            }
+            return true;
         }
 
         internal static void CreateActiveAnimations(BuildContext ctx, Socket socket, List<IAction> actions)

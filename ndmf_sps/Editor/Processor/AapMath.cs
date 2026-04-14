@@ -144,13 +144,44 @@ namespace com.meronmks.ndmfsps
         public ConditionFactory GreaterThan(string paramA, float threshold, bool orEqual = false)
         {
             EnsureParam(paramA);
-            var belowThreshold = orEqual ? threshold - 0.00001f : threshold;
-            var aboveThreshold = orEqual ? threshold : threshold + 0.00001f;
+            var belowThreshold = orEqual ? NextFloatDown(threshold) : threshold;
+            var aboveThreshold = orEqual ? threshold : NextFloatUp(threshold);
             return (whenTrue, whenFalse) => Make1D(
                 $"{paramA} {(orEqual ? ">=" : ">")} {threshold}",
                 paramA,
                 (belowThreshold, whenFalse ?? new AnimationClip()),
                 (aboveThreshold, whenTrue ?? new AnimationClip()));
+        }
+
+        /// <summary>
+        /// IEEE 754 の最小精度で次に大きいfloatを返す
+        /// </summary>
+        private static float NextFloatUp(float input)
+        {
+            return NextFloat(input, 1);
+        }
+
+        /// <summary>
+        /// IEEE 754 の最小精度で次に小さいfloatを返す
+        /// </summary>
+        private static float NextFloatDown(float input)
+        {
+            return NextFloat(input, -1);
+        }
+
+        private static float NextFloat(float input, int offset)
+        {
+            if (float.IsNaN(input) || float.IsPositiveInfinity(input) || float.IsNegativeInfinity(input))
+                return input;
+            if (input == 0)
+                return (offset > 0) ? float.Epsilon : -float.Epsilon;
+
+            var bytes = BitConverter.GetBytes(input);
+            var bits = BitConverter.ToInt32(bytes, 0);
+            if (input > 0) bits += offset;
+            else bits -= offset;
+            bytes = BitConverter.GetBytes(bits);
+            return BitConverter.ToSingle(bytes, 0);
         }
 
         public void SetValueWithConditions(params (Motion motion, ConditionFactory condition)[] targets)

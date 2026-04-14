@@ -18,6 +18,7 @@ namespace com.meronmks.ndmfsps
         private readonly HashSet<string> _registeredParams = new HashSet<string>();
         private readonly Dictionary<string, float> _paramDefaults = new Dictionary<string, float>();
         private readonly string _paramPrefix;
+        private readonly Dictionary<float, string> _cachedSpeeds = new Dictionary<float, string>();
         private bool _needsFrameTimeLayer;
 
         private const string AlwaysOneParam = "__ndmfsps_one";
@@ -325,9 +326,14 @@ namespace com.meronmks.ndmfsps
             if (smoothingSeconds <= 0) return targetParam;
             if (smoothingSeconds > 10) smoothingSeconds = 10;
 
-            var frameTime = GetOrCreateFrameTime();
-            var fractionPerSecond = CalculateFractionPerSecond(smoothingSeconds);
-            var speedParam = Multiply($"{name}/Speed", frameTime, fractionPerSecond);
+            // 同じsmoothingSecondsのSpeedパラメータをキャッシュして共有
+            if (!_cachedSpeeds.TryGetValue(smoothingSeconds, out var speedParam))
+            {
+                var frameTime = GetOrCreateFrameTime();
+                var fractionPerSecond = CalculateFractionPerSecond(smoothingSeconds);
+                speedParam = Multiply($"smoothingSpeed/{smoothingSeconds}", frameTime, fractionPerSecond);
+                _cachedSpeeds[smoothingSeconds] = speedParam;
+            }
 
             // 2パス: 加速度付きスムージング
             var pass1 = SmoothSinglePass($"{name}/Pass1", targetParam, speedParam);

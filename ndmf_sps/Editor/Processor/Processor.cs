@@ -185,7 +185,8 @@ namespace com.meronmks.ndmfsps
                     i++;
                 }
 
-                SocketProcessor.CreateActiveAnimations(ctx, socket, socket.activeAnimationActions);
+                var bakedSpsSocket = socket.transform.Find("BakedSpsSocket");
+                SocketProcessor.CreateActiveAnimations(ctx, socket, socket.activeAnimationActions, bakedSpsSocket);
             }
             
             foreach (var plug in plugs)

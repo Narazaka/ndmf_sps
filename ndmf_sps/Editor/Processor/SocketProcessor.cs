@@ -378,10 +378,10 @@ namespace com.meronmks.ndmfsps
         /// Plugが接近したら自動でOnになる機能に使われてるっぽい
         /// </summary>
         /// <param name="root"></param>
-        internal static void CreateAutoDistance(BuildContext ctx, Socket socket)
+        internal static void CreateAutoDistance(BuildContext ctx, Transform root, Socket socket)
         {
             var animator = ctx.AvatarRootObject.GetComponent<Animator>();
-            var autoDistanceRoot = Processor.CreateParentGameObject("AutoDistance", socket.transform);
+            var autoDistanceRoot = Processor.CreateParentGameObject("AutoDistance", root);
             var receiverGameObject = Processor.CreateParentGameObject("Receiver", autoDistanceRoot.transform);
             
             Processor.CreateVRCContactReceiver(
@@ -447,7 +447,7 @@ namespace com.meronmks.ndmfsps
             maMergeAnimator.matchAvatarWriteDefaults = true;
         }
 
-        internal static void CreateActiveAnimations(BuildContext ctx, Socket socket, List<IAction> actions)
+        internal static void CreateActiveAnimations(BuildContext ctx, Socket socket, List<IAction> actions, Transform bakedSpsSocket)
         {
             if (!socket.enableActiveAnimation)
             {
@@ -457,17 +457,17 @@ namespace com.meronmks.ndmfsps
             var maMergeAnimator = socket.gameObject.AddComponent<ModularAvatarMergeAnimator>();
             var controller = new AnimatorController();
             var parmName = $"{objectName}/Socket/Active"; //TODO: パラメータ名は一旦仮置き
-            
+
             controller.AddParameter(parmName, AnimatorControllerParameterType.Bool);
             controller.AddLayer($"SPS - Socket - Active Animation for {objectName}");
-            
+
             var layer = controller.layers[0];
             var stateMachine = layer.stateMachine;
 
             var offState = stateMachine.AddState("Off");
             var onState = stateMachine.AddState("On");
-            
-            foreach (Transform child in socket.transform)
+
+            foreach (Transform child in bakedSpsSocket)
             {
                 child.gameObject.SetActive(false);
                 if (child.gameObject.name.Equals("Senders") ||

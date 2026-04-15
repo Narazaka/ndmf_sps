@@ -445,6 +445,7 @@ namespace com.meronmks.ndmfsps
             maMergeAnimator.animator = controller;
             maMergeAnimator.layerType = VRCAvatarDescriptor.AnimLayerType.FX;
             maMergeAnimator.matchAvatarWriteDefaults = true;
+            maMergeAnimator.pathMode = MergeAnimatorPathMode.Absolute;
         }
 
         internal static void CreateActiveAnimations(BuildContext ctx, Socket socket, List<IAction> actions)
@@ -503,6 +504,7 @@ namespace com.meronmks.ndmfsps
             maMergeAnimator.animator = controller;
             maMergeAnimator.layerType = VRCAvatarDescriptor.AnimLayerType.FX;
             maMergeAnimator.matchAvatarWriteDefaults = true;
+            maMergeAnimator.pathMode = MergeAnimatorPathMode.Absolute;
         }
     }
 }

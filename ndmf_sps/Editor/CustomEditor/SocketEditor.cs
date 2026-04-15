@@ -96,20 +96,6 @@ namespace com.meronmks.ndmfsps
             if (advancedFoldout)
             {
                 EditorGUI.indentLevel++;
-                var pPosition = serializedObject.FindProperty(nameof(Socket.position));
-                EditorGUI.BeginChangeCheck();
-                EditorGUILayout.PropertyField(pPosition, Localization.G("inspector.socket.position"));
-                if (EditorGUI.EndChangeCheck())
-                {
-                    serializedObject.ApplyModifiedProperties();
-                }
-                var pRotation = serializedObject.FindProperty(nameof(Socket.rotation));
-                EditorGUI.BeginChangeCheck();
-                EditorGUILayout.PropertyField(pRotation, Localization.G("inspector.socket.rotation"));
-                if (EditorGUI.EndChangeCheck())
-                {
-                    serializedObject.ApplyModifiedProperties();
-                }
                 var pUseHipAvoidance = serializedObject.FindProperty(nameof(Socket.useHipAvoidance));
                 EditorGUI.BeginChangeCheck();
                 EditorGUILayout.PropertyField(pUseHipAvoidance, Localization.G("inspector.common.useHipAvoidance"));
@@ -120,6 +106,20 @@ namespace com.meronmks.ndmfsps
                 var pUnitsInMeters = serializedObject.FindProperty(nameof(Socket.unitsInMeters));
                 EditorGUI.BeginChangeCheck();
                 EditorGUILayout.PropertyField(pUnitsInMeters, Localization.G("inspector.common.unitsInMeters"));
+                if (EditorGUI.EndChangeCheck())
+                {
+                    serializedObject.ApplyModifiedProperties();
+                }
+                var pPosition = serializedObject.FindProperty(nameof(Socket.position));
+                EditorGUI.BeginChangeCheck();
+                EditorGUILayout.PropertyField(pPosition, Localization.G("inspector.socket.position"));
+                if (EditorGUI.EndChangeCheck())
+                {
+                    serializedObject.ApplyModifiedProperties();
+                }
+                var pRotation = serializedObject.FindProperty(nameof(Socket.rotation));
+                EditorGUI.BeginChangeCheck();
+                EditorGUILayout.PropertyField(pRotation, Localization.G("inspector.socket.rotation"));
                 if (EditorGUI.EndChangeCheck())
                 {
                     serializedObject.ApplyModifiedProperties();

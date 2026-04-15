@@ -23,6 +23,7 @@ namespace com.meronmks.ndmfsps
         private static SPSforNDMFTagComponent[] components;
         private static Socket[] sockets;
         private static Plug[] plugs;
+        private static Dictionary<Socket, Transform> socketBakeRoots;
 
         internal static readonly string[] selfContacts =
         {
@@ -55,10 +56,12 @@ namespace com.meronmks.ndmfsps
         internal static void CreateComponent(BuildContext ctx)
         {
             var animator = ctx.AvatarRootObject.GetComponent<Animator>();
-            
+            socketBakeRoots = new Dictionary<Socket, Transform>();
+
             foreach (var socket in sockets)
             {
                 var bakedSpsSocket = CreateParentGameObject("BakedSpsSocket", socket.transform);
+                socketBakeRoots[socket] = bakedSpsSocket.transform;
                 bakedSpsSocket.transform.localPosition = socket.position;
                 bakedSpsSocket.transform.localRotation = Quaternion.Euler(socket.rotation);
 
@@ -185,8 +188,7 @@ namespace com.meronmks.ndmfsps
                     i++;
                 }
 
-                var bakedSpsSocket = socket.transform.Find("BakedSpsSocket");
-                SocketProcessor.CreateActiveAnimations(ctx, socket, socket.activeAnimationActions, bakedSpsSocket);
+                SocketProcessor.CreateActiveAnimations(ctx, socket, socket.activeAnimationActions, socketBakeRoots[socket]);
             }
             
             foreach (var plug in plugs)

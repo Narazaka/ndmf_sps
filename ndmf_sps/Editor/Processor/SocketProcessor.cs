@@ -140,7 +140,7 @@ namespace com.meronmks.ndmfsps
                     handTouchZone.length,
                     Vector3.forward * -handTouchZone.length,
                     Processor.selfContacts,
-                    $"{SENDER_PARAMPREFIX}{root.gameObject.name.Replace("/", "_")}/{touchSelf.name.Replace("/", "_")}",
+                    $"{SENDER_PARAMPREFIX}{socket.gameObject.name.Replace("/", "_")}/{touchSelf.name.Replace("/", "_")}",
                     animator,
                     Processor.ReceiverParty.Self,
                     localOnly: true,
@@ -151,7 +151,7 @@ namespace com.meronmks.ndmfsps
                     handTouchZone.radius,
                     Vector3.forward * -(handTouchZone.length/2),
                     Processor.selfContacts,
-                    $"{SENDER_PARAMPREFIX}{root.gameObject.name.Replace("/", "_")}/{touchSelfClose.name.Replace("/", "_")}",
+                    $"{SENDER_PARAMPREFIX}{socket.gameObject.name.Replace("/", "_")}/{touchSelfClose.name.Replace("/", "_")}",
                     animator,
                     Processor.ReceiverParty.Self,
                     receiverType: ContactReceiver.ReceiverType.Constant,
@@ -165,7 +165,7 @@ namespace com.meronmks.ndmfsps
                     handTouchZone.length,
                     Vector3.forward * -handTouchZone.length,
                     Processor.bodyContacts,
-                    $"{SENDER_PARAMPREFIX}{root.gameObject.name.Replace("/", "_")}/{touchOthers.name.Replace("/", "_")}",
+                    $"{SENDER_PARAMPREFIX}{socket.gameObject.name.Replace("/", "_")}/{touchOthers.name.Replace("/", "_")}",
                     animator,
                     Processor.ReceiverParty.Others,
                     localOnly: true,
@@ -176,7 +176,7 @@ namespace com.meronmks.ndmfsps
                     handTouchZone.radius,
                     Vector3.forward * -(handTouchZone.length/2),
                     Processor.bodyContacts,
-                    $"{SENDER_PARAMPREFIX}{root.gameObject.name.Replace("/", "_")}/{touchOthersClose.name.Replace("/", "_")}",
+                    $"{SENDER_PARAMPREFIX}{socket.gameObject.name.Replace("/", "_")}/{touchOthersClose.name.Replace("/", "_")}",
                     animator,
                     Processor.ReceiverParty.Others,
                     receiverType: ContactReceiver.ReceiverType.Constant,
@@ -193,7 +193,7 @@ namespace com.meronmks.ndmfsps
                     {
                         "TPS_Pen_Penetrating"
                     },
-                    $"{SENDER_PARAMPREFIX}{root.gameObject.name.Replace("/", "_")}/{penOthers.name.Replace("/", "_")}",
+                    $"{SENDER_PARAMPREFIX}{socket.gameObject.name.Replace("/", "_")}/{penOthers.name.Replace("/", "_")}",
                     animator,
                     Processor.ReceiverParty.Others,
                     localOnly: true,
@@ -207,7 +207,7 @@ namespace com.meronmks.ndmfsps
                     {
                         "TPS_Pen_Penetrating"
                     },
-                    $"{SENDER_PARAMPREFIX}{root.gameObject.name.Replace("/", "_")}/{penOthersClose.name.Replace("/", "_")}",
+                    $"{SENDER_PARAMPREFIX}{socket.gameObject.name.Replace("/", "_")}/{penOthersClose.name.Replace("/", "_")}",
                     animator,
                     Processor.ReceiverParty.Others,
                     receiverType: ContactReceiver.ReceiverType.Constant,
@@ -224,7 +224,7 @@ namespace com.meronmks.ndmfsps
                     {
                         "TPS_Orf_Root"
                     },
-                    $"{SENDER_PARAMPREFIX}{root.gameObject.name.Replace("/", "_")}/{frotOthers.name.Replace("/", "_")}",
+                    $"{SENDER_PARAMPREFIX}{socket.gameObject.name.Replace("/", "_")}/{frotOthers.name.Replace("/", "_")}",
                     animator,
                     Processor.ReceiverParty.Others,
                     localOnly: true,
@@ -239,7 +239,7 @@ namespace com.meronmks.ndmfsps
                 {
                     "TPS_Pen_Root"
                 },
-                $"{SENDER_PARAMPREFIX}{root.gameObject.name.Replace("/", "_")}/{penSelfNewRoot.name.Replace("/", "_")}",
+                $"{SENDER_PARAMPREFIX}{socket.gameObject.name.Replace("/", "_")}/{penSelfNewRoot.name.Replace("/", "_")}",
                 animator,
                 Processor.ReceiverParty.Self,
                 localOnly: true,
@@ -253,7 +253,7 @@ namespace com.meronmks.ndmfsps
                 {
                     "TPS_Pen_Penetrating"
                 },
-                $"{SENDER_PARAMPREFIX}{root.gameObject.name.Replace("/", "_")}/{penSelfNewTip.name.Replace("/", "_")}",
+                $"{SENDER_PARAMPREFIX}{socket.gameObject.name.Replace("/", "_")}/{penSelfNewTip.name.Replace("/", "_")}",
                 animator,
                 Processor.ReceiverParty.Self,
                 localOnly: true,
@@ -267,7 +267,7 @@ namespace com.meronmks.ndmfsps
                 {
                     "TPS_Pen_Root"
                 },
-                $"{SENDER_PARAMPREFIX}{root.gameObject.name.Replace("/", "_")}/{penOthersNewRoot.name.Replace("/", "_")}",
+                $"{SENDER_PARAMPREFIX}{socket.gameObject.name.Replace("/", "_")}/{penOthersNewRoot.name.Replace("/", "_")}",
                 animator,
                 Processor.ReceiverParty.Others,
                 localOnly: true,
@@ -281,7 +281,7 @@ namespace com.meronmks.ndmfsps
                 {
                     "TPS_Pen_Penetrating"
                 },
-                $"{SENDER_PARAMPREFIX}{root.gameObject.name.Replace("/", "_")}/{penOthersNewTip.name.Replace("/", "_")}",
+                $"{SENDER_PARAMPREFIX}{socket.gameObject.name.Replace("/", "_")}/{penOthersNewTip.name.Replace("/", "_")}",
                 animator,
                 Processor.ReceiverParty.Others,
                 localOnly: true,
@@ -311,7 +311,7 @@ namespace com.meronmks.ndmfsps
                 var frontGameObject = Processor.CreateParentGameObject("Front", outerGameObject.transform);
                 var backGameObject = Processor.CreateParentGameObject("Back", outerGameObject.transform);
                 
-                var animParmPrefix = $"{root.gameObject.name.Replace("/", "_")}/Anim{(depthAction.enableSelf ? "" : "Others")}";
+                var animParmPrefix = $"{socket.gameObject.name.Replace("/", "_")}/Anim{(depthAction.enableSelf ? "" : "Others")}";
                 var outerRadius = Math.Max(0.01f, maxDist);
                 
                 Processor.CreateVRCContactReceiver(

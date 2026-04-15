@@ -367,9 +367,9 @@ namespace com.meronmks.ndmfsps
             }
 
             // 2パス: 加速度付きスムージング
+            // Pass1は中間パラメータ、Pass2は呼び出し元が期待するnameに直接書き込む
             var pass1 = SmoothSinglePass($"{name}/Pass1", targetParam, speedParam);
-            var pass2 = SmoothSinglePass($"{name}/Pass2", pass1, speedParam);
-            return pass2;
+            return SmoothSinglePass(name, pass1, speedParam);
         }
 
         /// <summary>
